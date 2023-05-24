@@ -59,15 +59,15 @@ stages:
         scriptLocation: inlineScript
         inlineScript: |
           az config set extension.use_dynamic_install=yes_without_prompt
-    - task: AzureCLI@2
-      displayName: "Set ACR credentials for the account"
-      inputs:
-        azureSubscription: $(SERVICE_CONNECTION)
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-          az acr login -n $(ACR_NAME)
-          ACRUSER=$(az acr credential show --name $(ACR_NAME)  --query "username")
-          echo "##vso[task.setvariable variable=ACRUSER;]$ACRUSER"
-          ACRPASS=$(az acr credential show --name $(ACR_NAME) --query "passwords[0].value")
-          echo "##vso[task.setvariable variable=ACRPASS;]$ACRPASS"
+    # - task: AzureCLI@2
+    #   displayName: "Set ACR credentials for the account"
+    #   inputs:
+    #     azureSubscription: $(SERVICE_CONNECTION)
+    #     scriptType: bash
+    #     scriptLocation: inlineScript
+    #     inlineScript: |
+    #       az acr login -n $(ACR_NAME)
+    #       ACRUSER=$(az acr credential show --name $(ACR_NAME)  --query "username")
+    #       echo "##vso[task.setvariable variable=ACRUSER;]$ACRUSER"
+    #       ACRPASS=$(az acr credential show --name $(ACR_NAME) --query "passwords[0].value")
+    #       echo "##vso[task.setvariable variable=ACRPASS;]$ACRPASS"
