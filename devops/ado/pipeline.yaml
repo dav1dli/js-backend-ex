@@ -1,0 +1,73 @@
+trigger:
+- main
+
+resources:
+- repo: self
+
+parameters:
+  - name: env
+    displayName: Environment to manage
+    type: string
+    default: poc
+    values:
+    - poc
+    - all
+  - name: cleanup
+    type: boolean
+    default: false
+
+variables:
+- template: config/${{ parameters.env }}.yaml
+- name: imgtag
+  value: '$(Build.BuildId)'
+- name: imgname
+  value: 'js-backend'
+- name: majorVersion
+  value: '1.0'
+
+stages:
+
+# Build the app container
+- stage: Build
+  displayName: Build container image
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: CmdLine@2
+      displayName: Show environment
+      inputs:
+        script: |
+          env | sort
+    - task: AzureCLI@2
+      displayName: "Show resource group"
+      inputs:
+        azureSubscription: ${{ variables.SERVICE_CONNECTION }}
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az group show -g ${{ variables.RESOURCE_GROUP }} | jq -r '.id'
+          export RG_ID=$(az group show -g ${{ variables.RESOURCE_GROUP }} | jq -r '.id')
+          echo "##vso[task.setvariable variable=rgId]${RG_ID}"
+    - task: AzureCLI@2
+      displayName: "Enable az extensions autoinstall"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az config set extension.use_dynamic_install=yes_without_prompt
+    - task: AzureCLI@2
+      displayName: "Set ACR credentials for the account"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az acr login -n $(ACR_NAME)
+          ACRUSER=$(az acr credential show --name $(ACR_NAME)  --query "username")
+          echo "##vso[task.setvariable variable=ACRUSER;]$ACRUSER"
+          ACRPASS=$(az acr credential show --name $(ACR_NAME) --query "passwords[0].value")
+          echo "##vso[task.setvariable variable=ACRPASS;]$ACRPASS"
