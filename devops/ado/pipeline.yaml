@@ -71,3 +71,16 @@ stages:
           echo "##vso[task.setvariable variable=ACRUSER;]$ACRUSER"
           ACRPASS=$(az acr credential show --name $(ACR_NAME) --query "passwords[0].value")
           echo "##vso[task.setvariable variable=ACRPASS;]$ACRPASS"
+    - task: AzureCLI@2
+      displayName: "Build and publish container image"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az acr build --registry $(ACR_NAME) --image $(imgname):$(majorVersion).$BUILD_BUILDID ./web
+          az acr repository untag -n $(ACR_NAME) -t $(imgname):latest
+          az acr import \
+            --name $(ACR_NAME) \
+            --source $(ACR_NAME)/$(imgname):$(majorVersion).$BUILD_BUILDID \
+            --image $(imgname):latest
