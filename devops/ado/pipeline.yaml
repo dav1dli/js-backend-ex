@@ -78,7 +78,7 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          az acr build --registry $(ACR_NAME) --image $(imgname):$(majorVersion).$BUILD_BUILDID ./web
+          az acr build --registry $(ACR_NAME) --image $(imgname):$(majorVersion).$BUILD_BUILDID ./src
           az acr repository untag -n $(ACR_NAME) -t $(imgname):latest
           az acr import \
             --name $(ACR_NAME) \
