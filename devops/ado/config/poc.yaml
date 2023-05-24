@@ -1,5 +1,5 @@
 variables:
-  ACR_NAME: acrpocdl.azurecr.io
+  ACR_NAME: acrpocmp.azurecr.io
   KV_NAME: KV-EUR-WW-POC-MP
   SERVICE_CONNECTION: AZU-EUR-WW-TEST-MP
   RESOURCE_GROUP: RG-EUR-WW-POC-MP
