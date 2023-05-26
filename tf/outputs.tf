@@ -10,3 +10,7 @@ output "resource_group_name" {
 output "tenant_id" {
   value = data.azurerm_client_config.current.tenant_id
 }
+
+output "application_object_id" {
+  value = data.azuread_application.app_registration.id
+}

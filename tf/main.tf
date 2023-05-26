@@ -1,10 +1,25 @@
 data "azurerm_client_config" "current" {
 }
-
+data "azuread_application" "app_registration" {
+  display_name = local.ad_app
+}
 resource "azurerm_resource_group" "rg" {
     name     = local.resource_group
     location = var.location
     tags     = var.tags
+}
+resource "azurerm_role_assignment" "curr_user_role" {
+  scope                = azurerm_resource_group.rg.id
+  role_definition_name = "Contributor"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+data "azuread_service_principal" "ad_app_sp" {
+  application_id = data.azuread_application.app_registration.application_id
+}
+resource "azurerm_role_assignment" "ad_app_role" {
+  scope                = azurerm_resource_group.rg.id
+  role_definition_name = "Contributor"
+  principal_id         = data.azuread_service_principal.ad_app_sp.object_id
 }
 module "log_analytics_workspace" {
   source                           = "./modules/analytics"
@@ -22,12 +37,8 @@ module "vnet" {
 
     subnets = [
         {
-          name : local.bstn_subnet
-          address_prefixes : var.bstn_subnet_address_prefix
-        },
-        {
-          name : local.mng_subnet
-          address_prefixes : var.mng_subnet_address_prefix
+          name : local.cap_subnet
+          address_prefixes : var.cap_subnet_address_prefix
         },
         {
           name : local.priv_endpt_subnet
@@ -54,6 +65,7 @@ module "acr_private_dns_zone" {
       resource_group_name = azurerm_resource_group.rg.name
     }
   }
+  depends_on                   = [ module.vnet ]
 }
 module "acr_private_endpoint" {
   source                         = "./modules/private_endpoint"
@@ -67,4 +79,14 @@ module "acr_private_endpoint" {
   subresource_name               = "registry"
   private_dns_zone_group_name    = "AcrPrivateDnsZoneGroup"
   private_dns_zone_group_ids     = [module.acr_private_dns_zone.id]
+  depends_on                   = [ module.acr, module.vnet ]
+}
+module "cap_environment" {
+  source                       = "./modules/cap_env"
+  name                         = local.cap_name
+  resource_group_name          = azurerm_resource_group.rg.name
+  location                     = azurerm_resource_group.rg.location
+  log_analytics_workspace_id   = module.log_analytics_workspace.id
+  infrastructure_subnet_id     = module.vnet.subnet_ids[local.cap_subnet]
+  depends_on                   = [ module.log_analytics_workspace, module.vnet ]
 }

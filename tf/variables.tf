@@ -1,7 +1,7 @@
 variable "location" {
   type = string
   description = "Azure Region where resources will be provisioned"
-  default = "westeurope"
+  default = "northeurope"
 }
 variable "environment" {
   type = string
@@ -43,27 +43,15 @@ variable "vnet_address_space" {
   default     =  ["10.0.0.0/16"]
   type        = list(string)
 }
-
-variable "bstn_subnet_name" {
-  description = "Specifies the name of the subnet that hosts the nodes"
-  default     =  "BastionSubnet"
+variable "cap_subnet_name" {
+  description = "Specifies the name of the subnet that hosts container apps"
+  default     =  "PodsSubnet"
   type        = string
 }
 
-variable "bstn_subnet_address_prefix" {
-  description = "Specifies the address prefix of the subnet that hosts nodes"
-  default     =  ["10.0.2.0/27"]
-  type        = list(string)
-}
-variable "mng_subnet_name" {
-  description = "Specifies the name of the subnet that hosts the nodes"
-  default     =  "ManagementSubnet"
-  type        = string
-}
-
-variable "mng_subnet_address_prefix" {
-  description = "Specifies the address prefix of the subnet that hosts nodes"
-  default     =  ["10.0.2.32/27"]
+variable "cap_subnet_address_prefix" {
+  description = "Specifies the address prefix of the subnet that hosts container apps"
+  default     =  ["10.0.0.0/22"]
   type        = list(string)
 }
 variable "priv_endpt_subnet_name" {
@@ -73,7 +61,7 @@ variable "priv_endpt_subnet_name" {
 }
 variable "priv_endpt_subnet_address_prefix" {
   description = "Specifies the address prefix of the subnet that hosts nodes"
-  default     =  ["10.0.2.128/25"]
+  default     =  ["10.0.4.0/24"]
   type        = list(string)
 }
 

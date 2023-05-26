@@ -7,7 +7,7 @@
 * operating user with permissions
 
 # Getting Started
-
+Due to security restrictions it is assumed that resource group is created in advance and imported into the state.
 ## Azure
 Login to Azure:
 ```
