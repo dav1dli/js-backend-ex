@@ -84,3 +84,34 @@ stages:
             --name $(ACR_NAME) \
             --source $(ACR_NAME)/$(imgname):$(majorVersion).$BUILD_BUILDID \
             --image $(imgname):latest
+    - task: AzureCLI@2
+      displayName: "Create Container App"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az containerapp create \
+            --name $(imgname) \
+            --resource-group $(RESOURCE_GROUP) \
+            --image $(ACR_NAME)/$(imgname):$(majorVersion).$BUILD_BUILDID \
+            --environment $(CAP_ENV) \
+            --registry-server $(ACR_NAME) \
+            --registry-username $(ACRUSER) \
+            --registry-password $(ACRPASS) \
+            --min-replicas 0 \
+            --max-replicas 3
+    - task: AzureCLI@2
+      displayName: Enable container app ingress
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: "bash"
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          az containerapp ingress enable \
+            --type external \
+            --name $(imgname) \
+            --resource-group $(RESOURCE_GROUP) \
+            --target-port 3500 \
+            --transport auto

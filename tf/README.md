@@ -33,5 +33,5 @@ terraform plan -var-file=env/poc/env.tfvars -out=test.tfplan
 ```
 Apply:
 ```
-terraform pply -input=false -auto-approve test.tfplan
+terraform apply -input=false -auto-approve test.tfplan
 ```
