@@ -26,6 +26,7 @@ variable "tags" {
     createdWith = "Terraform"
   }
 }
+# Log analytics --------------------------------------------------------------
 variable "log_analytics_workspace_name" {
   description = "Specifies the name of the log analytics workspace"
   default     = ""
@@ -37,7 +38,7 @@ variable "log_analytics_retention_days" {
   default     = 30
 }
 
-
+# Virtual network ----------------------------------------------------------------
 variable "vnet_address_space" {
   description = "Specifies the address prefix of the AKS subnet"
   default     =  ["10.0.0.0/16"]
@@ -197,6 +198,12 @@ variable "storage_account_replication_type" {
     condition = contains(["LRS", "ZRS", "GRS", "GZRS", "RA-GRS", "RA-GZRS"], var.storage_account_replication_type)
     error_message = "The replication type of the storage account is invalid."
   }
+}
+# Container app -----------------------------------------------------------
+variable "cap_private" {
+  description = "(Optional) Boolean flag to specify whether the Container App Environment is private. Defaults to false."
+  type        = bool
+  default     = false
 }
 # Jump host ---------------------------------------------------------------
 variable "jump_host_name" {

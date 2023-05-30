@@ -145,13 +145,14 @@ module "kv_private_endpoint" {
 }
 # Container app environment ------------------------------------------------------------
 module "cap_environment" {
-  source                       = "./modules/cap_env"
-  name                         = local.cap_name
-  resource_group_name          = azurerm_resource_group.rg.name
-  location                     = azurerm_resource_group.rg.location
-  log_analytics_workspace_id   = module.log_analytics_workspace.id
-  infrastructure_subnet_id     = module.vnet.subnet_ids[local.cap_subnet]
-  depends_on                   = [ module.log_analytics_workspace, module.vnet ]
+  source                         = "./modules/cap_env"
+  name                           = local.cap_name
+  resource_group_name            = azurerm_resource_group.rg.name
+  location                       = azurerm_resource_group.rg.location
+  log_analytics_workspace_id     = module.log_analytics_workspace.id
+  infrastructure_subnet_id       = module.vnet.subnet_ids[local.cap_subnet]
+  internal_load_balancer_enabled = var.cap_private
+  depends_on                     = [ module.log_analytics_workspace, module.vnet ]
 }
 module "cap_private_dns_zone" {
   source                       = "./modules/private_dns_zone"
@@ -171,6 +172,7 @@ resource "azurerm_private_dns_a_record" "cap_static_ip" {
   resource_group_name = azurerm_resource_group.rg.name
   ttl                 = 300
   records             = [ module.cap_environment.static_ip_address ]
+  depends_on          = [ module.cap_private_dns_zone, module.cap_environment ]
 }
 # Management VM -------------------------------------------------------------------------
 resource "random_string" "storage_account_suffix" {
