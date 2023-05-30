@@ -89,6 +89,60 @@ module "acr_private_endpoint" {
   private_dns_zone_group_ids     = [module.acr_private_dns_zone.id]
   depends_on                   = [ module.acr, module.vnet ]
 }
+# Key vault -----------------------------------------------------------------------------
+module "key_vault" {
+  source                          = "./modules/keyvault"
+  name                            = local.kv_name
+  location                        = azurerm_resource_group.rg.location
+  resource_group_name             = azurerm_resource_group.rg.name
+  tenant_id                       = data.azurerm_client_config.current.tenant_id
+  sku_name                        = var.key_vault_sku_name
+  tags                            = var.tags
+  enabled_for_deployment          = var.key_vault_enabled_for_deployment
+  enabled_for_disk_encryption     = var.key_vault_enabled_for_disk_encryption
+  enabled_for_template_deployment = var.key_vault_enabled_for_template_deployment
+  enable_rbac_authorization       = var.key_vault_enable_rbac_authorization
+  purge_protection_enabled        = var.key_vault_purge_protection_enabled
+  soft_delete_retention_days      = var.key_vault_soft_delete_retention_days
+  bypass                          = var.key_vault_bypass
+  default_action                  = var.key_vault_default_action
+}
+resource "azurerm_key_vault_access_policy" "opuser_kv_read" {
+  key_vault_id       = module.key_vault.id
+  tenant_id          = data.azurerm_client_config.current.tenant_id
+  object_id          = data.azurerm_client_config.current.object_id
+  key_permissions    = [ "Get", "List", "Encrypt", "Decrypt", "Create", "Update" ]
+  secret_permissions = [ "Get", "List", "Set" ]
+}
+resource "azurerm_key_vault_secret" "jump_host_ssh" {
+  name         = local.jump_host_name
+  value        = base64encode(file("~/.ssh/aks-tf-ssh-key"))
+  key_vault_id = module.key_vault.id
+}
+module "kv_private_dns_zone" {
+  source                       = "./modules/private_dns_zone"
+  name                         = "privatelink.vaultcore.azure.net"
+  resource_group_name          = azurerm_resource_group.rg.name
+  virtual_networks_to_link     = {
+    (module.vnet.name) = {
+      subscription_id = data.azurerm_client_config.current.subscription_id
+      resource_group_name = azurerm_resource_group.rg.name
+    }
+  }
+}
+module "kv_private_endpoint" {
+  source                         = "./modules/private_endpoint"
+  name                           = local.kv_pep_name
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  subnet_id                      = module.vnet.subnet_ids[local.priv_endpt_subnet]
+  tags                           = var.tags
+  private_connection_resource_id = module.key_vault.id
+  is_manual_connection           = false
+  subresource_name               = "vault"
+  private_dns_zone_group_name    = "KeyVaultPrivateDnsZoneGroup"
+  private_dns_zone_group_ids     = [module.kv_private_dns_zone.id]
+}
 # Container app environment ------------------------------------------------------------
 module "cap_environment" {
   source                       = "./modules/cap_env"
@@ -180,19 +234,24 @@ module "jumphost" {
   shutdown_time                       = var.vm_shutdown_time
   depends_on                          = [module.vnet, module.acr]
 }
-resource "azurerm_role_assignment" "acr_pull_jumphost" {
-  principal_id                     = module.jumphost.vm_managed_id
-  role_definition_name             = "AcrPull"
-  scope                            = module.acr.id
-  skip_service_principal_aad_check = true
-}
+# resource "azurerm_role_assignment" "jumphost_acr_pull" {
+#   principal_id                     = module.jumphost.vm_managed_id
+#   role_definition_name             = "AcrPull"
+#   scope                            = module.acr.id
+#   skip_service_principal_aad_check = true
+# }
 resource "azurerm_role_assignment" "jumphost_contributor" {
   principal_id                     = module.jumphost.vm_managed_id
   role_definition_name             = "Contributor"
   scope                            = azurerm_resource_group.rg.id
   skip_service_principal_aad_check = true
 }
-
+resource "azurerm_key_vault_access_policy" "jumphost_kv_key_read" {
+  key_vault_id    = module.key_vault.id
+  tenant_id       = data.azurerm_client_config.current.tenant_id
+  object_id       = module.jumphost.vm_managed_id
+  key_permissions = [ "Get", "List", "Encrypt", "Decrypt" ]
+}
 module "bastion" {
   source                       = "./modules/bastion"
   name                         = local.bastion_name

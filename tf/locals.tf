@@ -7,7 +7,7 @@ locals {
   mng_subnet                   = "SBNT-MNG-${var.region}-${var.environment}-${var.project}"
   acr_name                     = "ACR${var.environment}${var.project}"
   acr_pep_name                 = "PEP-ACR-${var.region}-${var.environment}-${var.project}"
-  kv_name                      = "KV-${var.region}-${var.environment}-${var.project}"
+  kv_name                      = "KV-${var.region}-${var.environment}-${var.project}-01"
   kv_pep_name                  = "PEP-KV-${var.region}-${var.environment}-${var.project}"
   cap_name                     = "CAP-${var.region}-${var.environment}-${var.project}"
   log_analytics_workspace_name = "OMS-${var.region}-${var.environment}-${var.project}"
