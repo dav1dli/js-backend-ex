@@ -35,3 +35,11 @@ Apply:
 ```
 terraform apply -input=false -auto-approve test.tfplan
 ```
+
+## App Container
+Application code is in `src/`. Dockerfile is proviced. The application starts a server and listens on port `3500`.
+
+## Container App
+Before the container app is deployed it is assumed that the cloud infrastructure is created using the provided terraform stack.
+
+The app container build and deployment is automated using Azire DevOps pipline in `devops/ado/pipeline.yaml`.

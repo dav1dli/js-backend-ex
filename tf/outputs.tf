@@ -14,3 +14,13 @@ output "tenant_id" {
 output "application_object_id" {
   value = data.azuread_application.app_registration.id
 }
+
+output "cap_name" {
+  value = module.cap_environment.name
+}
+output "cap_static_ip" {
+  value = module.cap_environment.static_ip_address
+}
+output "cap_default_domain" {
+  value = module.cap_environment.default_domain
+}
