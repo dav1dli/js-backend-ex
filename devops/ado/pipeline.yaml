@@ -115,3 +115,30 @@ stages:
             --resource-group $(RESOURCE_GROUP) \
             --target-port 3500 \
             --transport auto
+    - task: AzureCLI@2
+      displayName: Test container app ingress
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: "bash"
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          FQDN=$(az containerapp ingress show -n $(imgname) -g $(RESOURCE_GROUP) | jq -r ".fqdn")
+          echo "##vso[task.setvariable variable=FQDN;]$FQDN"
+          curl -w '%{http_code}\n' -s -LI  https://${FQDN}
+          CODE=$(curl -w '%{http_code}\n' -s -o /dev/null -LI  https://${FQDN})
+          if [[ "$CODE" -ne 200 ]] ; then
+            echo "Service returened error code: $CODE"
+            exit 1
+          else
+            echo "Service is available with code: $CODE"
+          fi
+    - task: AzureCLI@2
+      displayName: "Cleanup container app"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az containerapp delete --yes -n $(imgname) -g $(RESOURCE_GROUP)
+      condition: and(succeeded(), eq('${{ parameters.cleanup }}', 'true'))
