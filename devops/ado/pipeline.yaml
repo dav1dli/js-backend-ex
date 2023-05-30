@@ -23,7 +23,7 @@ variables:
 - name: beImgName
   value: 'js-backend'
 - name: feImgName
-  value: 'js-backend'
+  value: 'js-frontend'
 - name: majorVersion
   value: '1.0'
 
