@@ -22,6 +22,8 @@ variables:
   value: '$(Build.BuildId)'
 - name: beImgName
   value: 'js-backend'
+- name: feImgName
+  value: 'js-backend'
 - name: majorVersion
   value: '1.0'
 
@@ -84,6 +86,19 @@ stages:
             --name $(ACR_NAME) \
             --source $(ACR_NAME)/$(beImgName):$(majorVersion).$BUILD_BUILDID \
             --image $(beImgName):latest
+    - task: AzureCLI@2
+      displayName: "Build and publish frontend container image"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az acr build --registry $(ACR_NAME) --image $(feImgName):$(majorVersion).$BUILD_BUILDID ./frontend
+#          az acr repository untag -n $(ACR_NAME) -t $(feImgName):latest
+          az acr import \
+            --name $(ACR_NAME) \
+            --source $(ACR_NAME)/$(feImgName):$(majorVersion).$BUILD_BUILDID \
+            --image $(feImgName):latest
     - task: CmdLine@2
       displayName: Get client IP address
       inputs:
