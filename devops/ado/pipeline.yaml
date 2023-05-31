@@ -116,6 +116,7 @@ stages:
             --name $(beImgName) \
             --resource-group $(RESOURCE_GROUP) \
             --image $(ACR_NAME)/$(beImgName):$(majorVersion).$BUILD_BUILDID \
+            --system-assigned \
             --environment $(CAP_ENV) \
             --ingress 'internal' \
             --target-port 3500 \

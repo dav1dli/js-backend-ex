@@ -1,4 +1,6 @@
 FROM node:lts-alpine
+RUN apk add --update curl && \
+    rm -rf /var/cache/apk/*
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
 COPY ["package.json", "package-lock.json*", "npm-shrinkwrap.json*", "./"]
