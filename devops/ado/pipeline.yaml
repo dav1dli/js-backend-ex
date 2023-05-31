@@ -153,21 +153,21 @@ stages:
             --registry-password $(ACRPASS) \
             --min-replicas 1 \
             --max-replicas 3
-    # - task: AzureCLI@2
-    #   displayName: Restrict access to frontend container app ingress
-    #   inputs:
-    #     azureSubscription: $(SERVICE_CONNECTION)
-    #     scriptType: "bash"
-    #     scriptLocation: inlineScript
-    #     inlineScript: |
-    #       set -e
-    #         az containerapp ingress access-restriction set \
-    #           -n $(feImgName) \
-    #           -g $(RESOURCE_GROUP) \
-    #           --rule-name ado-client \
-    #           --ip-address $(curl -s http://ipinfo.io/json | jq -r '.ip') \
-    #           --description "Allow access from ADO client" \
-    #           --action Allow
+    - task: AzureCLI@2
+      displayName: Restrict access to frontend container app ingress
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: "bash"
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+            az containerapp ingress access-restriction set \
+              -n $(feImgName) \
+              -g $(RESOURCE_GROUP) \
+              --rule-name ado-client \
+              --ip-address $(curl -s http://ipinfo.io/json | jq -r '.ip') \
+              --description "Allow access from ADO client" \
+              --action Allow
     - task: AzureCLI@2
       displayName: Test container app ingress
       inputs:
