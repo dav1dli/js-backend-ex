@@ -122,7 +122,7 @@ stages:
             --registry-server $(ACR_NAME) \
             --registry-username $(ACRUSER) \
             --registry-password $(ACRPASS) \
-            --min-replicas 1 \
+            --min-replicas 0 \
             --max-replicas 3
     - task: AzureCLI@2
       displayName: "Get backend FQDN"
@@ -151,8 +151,11 @@ stages:
             --registry-server $(ACR_NAME) \
             --registry-username $(ACRUSER) \
             --registry-password $(ACRPASS) \
-            --min-replicas 1 \
-            --max-replicas 3
+            --min-replicas 0 \
+            --max-replicas 3 \
+            --scale-rule-name azure-http-rule \
+            --scale-rule-type http \
+            --scale-rule-http-concurrency 10
     - task: AzureCLI@2
       displayName: Restrict access to frontend container app ingress
       inputs:
@@ -186,6 +189,15 @@ stages:
           else
             echo "Service is available with code: $CODE"
           fi
+    - task: CmdLine@2
+      displayName: Inject app URL into test script
+      inputs:
+        script: |
+          cat tests/load/k6-test.js | sed "s/TARGET/$FQDN/" > test.js
+    - task: k6-load-test@0
+      displayName: "Load test the container app"
+      inputs:
+        filename: 'test.js'
     - task: AzureCLI@2
       displayName: "Cleanup container app"
       inputs:
