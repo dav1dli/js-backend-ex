@@ -106,7 +106,7 @@ stages:
           echo "This Microsoft hosted agent public IP is: ${IP}"
           echo "##vso[task.setvariable variable=AGENT_IP]$(curl -s http://ipinfo.io/json | jq -r '.ip')"
     - task: AzureCLI@2
-      displayName: "Create Container App"
+      displayName: "Create backend container app"
       inputs:
         azureSubscription: $(SERVICE_CONNECTION)
         scriptType: bash
@@ -117,27 +117,42 @@ stages:
             --resource-group $(RESOURCE_GROUP) \
             --image $(ACR_NAME)/$(beImgName):$(majorVersion).$BUILD_BUILDID \
             --environment $(CAP_ENV) \
+            --ingress 'internal' \
+            --target-port 3500 \
             --registry-server $(ACR_NAME) \
             --registry-username $(ACRUSER) \
             --registry-password $(ACRPASS) \
             --min-replicas 0 \
             --max-replicas 3
     - task: AzureCLI@2
-      displayName: Enable container app ingress
+      displayName: "Get backend FQDN"
       inputs:
         azureSubscription: $(SERVICE_CONNECTION)
-        scriptType: "bash"
+        scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          set -e
-          az containerapp ingress enable \
-            --type external \
-            --name $(beImgName) \
-            --resource-group $(RESOURCE_GROUP) \
-            --target-port 3500 \
-            --transport auto
+          BEFQDN=$(az containerapp ingress show -n $(beImgName) -g $(RESOURCE_GROUP) | jq -r ".fqdn")
+          echo "##vso[task.setvariable variable=API_BASE_URL;]$BEFQDN"
     - task: AzureCLI@2
-      displayName: Restrict access to container app ingress
+      displayName: "Create frontend container app"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az containerapp create \
+            --name $(feImgName) \
+            --resource-group $(RESOURCE_GROUP) \
+            --image $(ACR_NAME)/$(feImgName):$(majorVersion).$BUILD_BUILDID \
+            --environment $(CAP_ENV) \
+            --ingress 'internal' \
+            --target-port 3000 \
+            --env-vars API_BASE_URL=https://$API_BASE_URL \
+            --registry-server $(ACR_NAME) \
+            --registry-username $(ACRUSER) \
+            --registry-password $(ACRPASS)
+    - task: AzureCLI@2
+      displayName: Restrict access to frontend container app ingress
       inputs:
         azureSubscription: $(SERVICE_CONNECTION)
         scriptType: "bash"
@@ -145,7 +160,7 @@ stages:
         inlineScript: |
           set -e
             az containerapp ingress access-restriction set \
-              -n $(beImgName) \
+              -n $(feImgName) \
               -g $(RESOURCE_GROUP) \
               --rule-name ado-client \
               --ip-address $(curl -s http://ipinfo.io/json | jq -r '.ip') \
@@ -159,10 +174,10 @@ stages:
         scriptLocation: inlineScript
         inlineScript: |
           set -e
-          FQDN=$(az containerapp ingress show -n $(beImgName) -g $(RESOURCE_GROUP) | jq -r ".fqdn")
+          FQDN=$(az containerapp ingress show -n $(feImgName) -g $(RESOURCE_GROUP) | jq -r ".fqdn")
           echo "##vso[task.setvariable variable=FQDN;]$FQDN"
-          curl -w '%{http_code}\n' -s -LI  https://${FQDN}/albums
-          CODE=$(curl -w '%{http_code}\n' -s -o /dev/null -LI  https://${FQDN}/albums)
+          curl -w '%{http_code}\n' -s -LI  https://${FQDN}
+          CODE=$(curl -w '%{http_code}\n' -s -o /dev/null -LI  https://${FQDN})
           if [[ "$CODE" -ne 200 ]] ; then
             echo "Service returened error code: $CODE"
             exit 1
@@ -176,5 +191,6 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
+          az containerapp delete --yes -n $(feImgName) -g $(RESOURCE_GROUP)
           az containerapp delete --yes -n $(beImgName) -g $(RESOURCE_GROUP)
       condition: and(succeeded(), eq('${{ parameters.cleanup }}', 'true'))
