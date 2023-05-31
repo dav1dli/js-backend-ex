@@ -173,6 +173,23 @@ stages:
               --description "Allow access from ADO client" \
               --action Allow
     - task: AzureCLI@2
+      displayName: "Create storage queue reading container app"
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az containerapp create \
+            --name 'queue-app' \
+            --resource-group $(RESOURCE_GROUP) \
+            --image 'mcr.microsoft.com/azuredocs/containerapps-queuereader' \
+            --environment $(CAP_ENV) \
+            --secrets "queueconnection=$(az storage account show-connection-string -g $(RESOURCE_GROUP) --name sapocdlstorque | jq -r ".connectionString")"
+            --env-vars "QueueName=myqueue" \
+              "QueueConnectionString=secretref:queueconnection"
+            --min-replicas 0 \
+            --max-replicas 3
+    - task: AzureCLI@2
       displayName: Test container app ingress
       inputs:
         azureSubscription: $(SERVICE_CONNECTION)
@@ -199,6 +216,18 @@ stages:
       displayName: "Load test the container app"
       inputs:
         filename: 'test.js'
+    - task: AzureCLI@2
+      displayName: Test queue reader container app
+      inputs:
+        azureSubscription: $(SERVICE_CONNECTION)
+        scriptType: "bash"
+        scriptLocation: inlineScript
+        inlineScript: |
+          export QUEUE_CONNECTION_STRING=$(az storage account show-connection-string -g $(RESOURCE_GROUP) --name sapocdlstorque | jq -r ".connectionString")
+          for i in {0..100}; do
+            az storage message put --content "Hello CAP $i" --queue-name "myqueue" \
+               --connection-string $QUEUE_CONNECTION_STRING
+          done
     - task: AzureCLI@2
       displayName: "Cleanup container app"
       inputs:
