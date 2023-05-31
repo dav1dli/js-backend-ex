@@ -7,6 +7,7 @@ This repository is a companion for the [Azure Container Apps code-to-cloud quick
 Additional aspects of Container Apps are part of the example:
 * building container images in ACR
 * custom VNET integration
+* internal and external ingresses
 * IP based access restrictions
 * running tests automated tests
 

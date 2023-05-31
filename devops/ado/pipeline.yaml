@@ -147,7 +147,7 @@ stages:
             --environment $(CAP_ENV) \
             --ingress 'external' \
             --target-port 3000 \
-            --env-vars API_BASE_URL=https://$API_BASE_URL \
+            --env-vars API_BASE_URL=https://$(beImgName) \
             --registry-server $(ACR_NAME) \
             --registry-username $(ACRUSER) \
             --registry-password $(ACRPASS) \
