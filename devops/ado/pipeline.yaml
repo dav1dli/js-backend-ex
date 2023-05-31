@@ -184,9 +184,9 @@ stages:
             --resource-group $(RESOURCE_GROUP) \
             --image 'mcr.microsoft.com/azuredocs/containerapps-queuereader' \
             --environment $(CAP_ENV) \
-            --secrets "queueconnection=$(az storage account show-connection-string -g $(RESOURCE_GROUP) --name sapocdlstorque | jq -r ".connectionString")"
+            --secrets "queueconnection=$(az storage account show-connection-string -g $(RESOURCE_GROUP) --name sapocdlstorque | jq -r ".connectionString")" \
             --env-vars "QueueName=myqueue" \
-              "QueueConnectionString=secretref:queueconnection"
+              "QueueConnectionString=secretref:queueconnection" \
             --min-replicas 0 \
             --max-replicas 3
     - task: AzureCLI@2
