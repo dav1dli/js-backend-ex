@@ -121,11 +121,24 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
+          echo "az containerapp create \
+            --name $(beImgName) \
+            --resource-group $(RESOURCE_GROUP) \
+            --image $(ACR_NAME)/$(beImgName):$(majorVersion).$BUILD_BUILDID \
+            --user-assigned  "$(USRIDN_ID)" \
+            --environment $(CAP_ENV) \
+            --ingress 'internal' \
+            --target-port 3500 \
+            --registry-server $(ACR_NAME) \
+            --registry-username $(ACRUSER) \
+            --registry-password $(ACRPASS) \
+            --min-replicas 0 \
+            --max-replicas 3"
           az containerapp create \
             --name $(beImgName) \
             --resource-group $(RESOURCE_GROUP) \
             --image $(ACR_NAME)/$(beImgName):$(majorVersion).$BUILD_BUILDID \
-            --user-assigned  "${USRIDN_ID}" \
+            --user-assigned  "$(USRIDN_ID)" \
             --environment $(CAP_ENV) \
             --ingress 'internal' \
             --target-port 3500 \
