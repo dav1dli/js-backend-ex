@@ -10,6 +10,7 @@ locals {
   kv_name                      = "KV-${var.region}-${var.environment}-${var.project}-01"
   kv_pep_name                  = "PEP-KV-${var.region}-${var.environment}-${var.project}"
   cap_name                     = "CAP-${var.region}-${var.environment}-${var.project}"
+  cap_user_identity            = "CAP-IDN-${var.region}-${var.environment}-${var.project}"
   log_analytics_workspace_name = "OMS-${var.region}-${var.environment}-${var.project}"
   ad_app                       = "AZU-${var.region}-${var.environment}-${var.project}"
   storage_account_prefix       = "sa${var.environment}${var.project}"
