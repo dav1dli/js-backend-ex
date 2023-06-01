@@ -112,8 +112,7 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          USRIDN=$(az identity show -n $(IDN_NAME) -g $(RESOURCE_GROUP) | jq -r ".principalId")
-          echo "##vso[task.setvariable variable=USRIDN_ID]${USRIDN}"
+          echo "##vso[task.setvariable variable=USRIDN_ID]$(az identity show -n $(IDN_NAME) -g $(RESOURCE_GROUP) | jq -r ".principalId")"
     - task: AzureCLI@2
       displayName: "Create backend container app"
       inputs:
@@ -125,7 +124,7 @@ stages:
             --name $(beImgName) \
             --resource-group $(RESOURCE_GROUP) \
             --image $(ACR_NAME)/$(beImgName):$(majorVersion).$BUILD_BUILDID \
-            --user-assigned  "$(USRIDN_ID)" \
+            --user-assigned  $(IDN_NAME) \
             --environment $(CAP_ENV) \
             --ingress 'internal' \
             --target-port 3500 \
@@ -138,7 +137,7 @@ stages:
             --name $(beImgName) \
             --resource-group $(RESOURCE_GROUP) \
             --image $(ACR_NAME)/$(beImgName):$(majorVersion).$BUILD_BUILDID \
-            --user-assigned  "$(USRIDN_ID)" \
+            --user-assigned $(IDN_NAME) \
             --environment $(CAP_ENV) \
             --ingress 'internal' \
             --target-port 3500 \
